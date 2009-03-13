@@ -12,7 +12,6 @@ License information follows at the end of this file.
 CakePHP TypogrifyHelper Copyright (c) 2009, Dave Poole <http://www.zastica.com>
 
 php-typogrify Copyright (c) 2007, Hamish Macpherson
-
 php-typogriphy is a port of the original Python code by Christian Metts.
 
 SmartyPants Copyright (c) 2003-2004 John Gruber <http://daringfireball.net>
