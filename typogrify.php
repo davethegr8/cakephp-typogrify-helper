@@ -12,6 +12,7 @@ License information follows at the end of this file.
 CakePHP TypogrifyHelper Copyright (c) 2009, Dave Poole <http://www.zastica.com>
 
 php-typogrify Copyright (c) 2007, Hamish Macpherson
+
 php-typogriphy is a port of the original Python code by Christian Metts.
 
 SmartyPants Copyright (c) 2003-2004 John Gruber <http://daringfireball.net>
@@ -28,30 +29,40 @@ class TypogrifyHelper extends AppHelper {
 	public $smartypants_attr;
 	public $sp_tags_to_skip;
 	
+	/**
+	 * Constructor - Initializes the object and sets up default values
+	 */
 	function TypogrifyHelper() {
 		
 		$this->SmartyPantsPHPVersion    = '1.5.1e'; # Fru 9 Dec 2005
 		$this->SmartyPantsSyntaxVersion = '1.5.1';  # Fri 12 Mar 2004
 
-
-		# Configurable variables:
-		$this->smartypants_attr = "1";  # Change this to configure.
-								  #  1 =>  "--" for em-dashes; no en-dash support
-								  #  2 =>  "---" for em-dashes; "--" for en-dashes
-								  #  3 =>  "--" for em-dashes; "---" for en-dashes
-								  #  See docs for more configuration options.
-
-		# Globals:
+		// Tags to skip:
 		$this->sp_tags_to_skip = '<(/?)(?:pre|code|kbd|script|math)[\s>]';
+
+		# Change this to configure.
+		#  1 =>  "--" for em-dashes; no en-dash support
+		#  2 =>  "---" for em-dashes; "--" for en-dashes
+		#  3 =>  "--" for em-dashes; "---" for en-dashes
+		#  See docs for more configuration options.
+		$this->smartypants_attr = "1";
 	}
 	
-	/* Main Typogrify Function */
-	function parse($text, $do_guillemets = false) {
+	/**
+	 * Main Typogrify Function. Calls the other functions that process the various 
+	 * charactersets
+	 *
+	 * @param $text The text string to Typogrify
+	 * @param $doGuillemets Also process French-style << and >>?
+	 *
+	 * @return The typogrified text
+	 */
+	function parse($text, $doGuillemets = false) {
 		$text = $this->amp( $text );
 	    $text = $this->widont( $text );
-	    $text = $this->SmartyPants( $text );
+	    $text = $this->smartyPants( $text );
 	    $text = $this->caps( $text );
-	    $text = $this->initial_quotes( $text, $do_guillemets );
+	    $text = $this->initial_quotes( $text, $doGuillemets );
 	    $text = $this->dash( $text );
 
 	    return $this->output($text);
@@ -59,61 +70,66 @@ class TypogrifyHelper extends AppHelper {
 	
 	
 	/**
-	 * amp
-	 * 
 	 * Wraps ampersands in html with ``<span class="amp">`` so they can be
 	 * styled with CSS. Ampersands are also normalized to ``&amp;``. Requires 
 	 * ampersands to have whitespace or an ``&nbsp;`` on both sides.
 	 * 
 	 * It won't mess up & that are already wrapped, in entities or URLs
+	 *
+	 * @param   $text Text to transform ampersands in
+	 *
+	 * @return  The string with ampersands replaced
 	 */
-	function amp( $text )
-	{
+	function amp( $text ) {
 	    $amp_finder = "/(\s|&nbsp;)(&|&amp;|&\#38;|&#038;)(\s|&nbsp;)/";
 	    return preg_replace($amp_finder, '\\1<span class="amp">&amp;</span>\\3', $text);
 	}
 	
 	/**
-	 * widont
-	 * 
 	 * Replaces the space between the last two words in a string with ``&nbsp;``
 	 * Works in these block tags ``(h1-h6, p, li)`` and also accounts for 
 	 * potential closing inline elements ``a, em, strong, span, b, i``
 	 * 
 	 * Empty HTMLs shouldn't error
+	 *
+	 * @param   $text Text to transform
+	 *
+	 * @return  The string with widows (hopefully) eliminated
 	 */
-	function widont( $text )
-	{
+	function widont( $text ) {
+		$tags = "a|span|i|b|em|strong|acronym|caps|sub|sup|abbr|big|small|code|cite|tt";
+		
 	    // This regex is a beast, tread lightly
-	    $widont_finder = "/([^\s])\s+(((<(a|span|i|b|em|strong|acronym|caps|sub|sup|abbr|big|small|code|cite|tt)[^>]*>)*\s*[^\s<>]+)(<\/(a|span|i|b|em|strong|acronym|caps|sub|sup|abbr|big|small|code|cite|tt)>)*[^\s<>]*\s*(<\/(p|h[1-6]|li)>|$))/i";
+	    $widont_finder = "/([^\s])\s+(((<($tags)[^>]*>)*\s*[^\s<>]+)(<\/($tags)>)*[^\s<>]*\s*(<\/(p|h[1-6]|li)>|$))/i";
 
 	    return preg_replace($widont_finder, '$1&nbsp;$2', $text);
 	}
 	
 	/**
-	 * dash
-	 * 
 	 * Puts a &thinsp; before and after an &ndash or &mdash;
 	 * Dashes may have whitespace or an ``&nbsp;`` on both sides
+	 *
+	 * @param   $text Text to transform
+	 *
+	 * @return  The string with dashes padded with &thinsp;
 	 */
-	function dash( $text )
-	{
+	function dash( $text ) {
 	    $dash_finder = "/(\s|&nbsp;|&thinsp;)*(&mdash;|&ndash;|&#x2013;|&#8211;|&#x2014;|&#8212;)(\s|&nbsp;|&thinsp;)*/";
 	    return preg_replace($dash_finder, '&thinsp;\\2&thinsp;', $text);
 	}
 	
 	
 	/**
-	 * caps
-	 *
 	 * Wraps multiple capital letters in ``<span class="caps">`` 
 	 * so they can be styled with CSS. 
 	 * 
 	 * Uses the smartypants tokenizer to not screw with HTML or with tags it shouldn't.
+	 *
+	 * @param   $text Text to transform
+	 *
+	 * @return  The string with caps wrapped
 	 */
-	function caps( $text )
-	{
-	    // Tokenize; see smartypants.php
+	function caps( $text ) {
 	    $tokens = $this->TokenizeHTML($text);    
 	    $result = array();
 	    $in_skipped_tag = false;
@@ -128,30 +144,24 @@ class TypogrifyHelper extends AppHelper {
 
 	    $tags_to_skip_regex = "/<(\/)?(?:pre|code|kbd|script|math)[^>]*>/i";
 
-	    foreach ($tokens as $token)
-	    {
-	        if ( $token[0] == "tag" )
-	        {
+	    foreach ($tokens as $token) {
+	        if ( $token[0] == "tag" ) {
 	            // Don't mess with tags.
 	            $result[] = $token[1];
 	            $close_match = preg_match($tags_to_skip_regex, $token[1]);            
-	            if ( $close_match )
-	            {
+				
+	            if ( $close_match ) {
 	                $in_skipped_tag = true;
 	            }
-	            else
-	            {
+	            else {
 	                $in_skipped_tag = false;
 	            }
 	        }
-	        else
-	        {
-	            if ( $in_skipped_tag )
-	            {
+	        else {
+	            if ( $in_skipped_tag ) {
 	                $result[] = $token[1];
 	            }
-	            else
-	            {
+	            else {
 	                $result[] = preg_replace_callback($cap_finder, array('typogrifyhelper', '_cap_wrapper'), $token[1]);
 	            }
 	        }
@@ -161,31 +171,29 @@ class TypogrifyHelper extends AppHelper {
 	
 	/**
 	 * This is necessary to keep dotted cap strings to pick up extra spaces
-	 * used in preg_replace_callback later on
+	 * used in preg_replace_callback in caps()
+	 *
+	 * @param   $matchobj The function that called this one
+	 *
+	 * @return  A formatted string
 	 */
-	function _cap_wrapper( $matchobj )
-	{
-	    if ( !empty($matchobj[2]) )
-	    {
+	function _cap_wrapper( $matchobj ) {
+	    if ( !empty($matchobj[2]) ) {
 	        return sprintf('<span class="caps">%s</span>', $matchobj[2]);
 	    }
-	    else 
-	    {
+	    else {
 	        $mthree = $matchobj[3];
-	        if ( ($mthree{strlen($mthree)-1}) == " " )
-	        {
+	        if ( ($mthree{strlen($mthree)-1}) == " " ) {
 	            $caps = substr($mthree, 0, -1);
 	            $tail = ' ';
 	        }
-	        else
-	        {
+	        else {
 	            $caps = $mthree;
 	            $tail = '';
 	        }            
 	        return sprintf('<span class="caps">%s</span>%s', $caps, $tail);
 	    }
 	}
-	
 	
 	/**
 	 * initial_quotes
@@ -194,9 +202,13 @@ class TypogrifyHelper extends AppHelper {
 	 * ``class="quo"`` for single quotes. Works in these block tags ``(h1-h6, p, li)``
 	 * and also accounts for potential opening inline elements ``a, em, strong, span, b, i``
 	 * Optionally choose to apply quote span tags to Gullemets as well.
+	 *
+	 * @param   $text The string to format initial quotes
+	 * @param   $doGuillemets Also do << and >>?
+	 *
+	 * @return  The text string with initial quotes wrapped with class="dquo" or class="quo"
 	 */
-	function initial_quotes( $text, $do_guillemets = false )
-	{
+	function initial_quotes( $text, $doGuillemets = false ) {
 	    $quote_finder = "/((<(p|h[1-6]|li)[^>]*>|^)                     # start with an opening p, h1-6, li or the start of the string
 	                    \s*                                             # optional white space! 
 	                    (<(a|em|span|strong|i|b)[^>]*>\s*)*)            # optional opening inline tags, with more optional white space for each.
@@ -204,8 +216,7 @@ class TypogrifyHelper extends AppHelper {
 	                                                                    # double quotes are in group 7, singles in group 8
 	                    /ix";
 
-	    if ($do_guillemets)
-	    {
+	    if ($doGuillemets) {
 	    	$quote_finder = "/((<(p|h[1-6]|li)[^>]*>|^)                     					# start with an opening p, h1-6, li or the start of the string
 		                    \s*                                             					# optional white space! 
 		                    (<(a|em|span|strong|i|b)[^>]*>\s*)*)            					# optional opening inline tags, with more optional white space for each.
@@ -217,29 +228,40 @@ class TypogrifyHelper extends AppHelper {
 	    return preg_replace_callback($quote_finder, array('typogrifyhelper', '_quote_wrapper'), $text);
 	}
 	
-	
-	function _quote_wrapper( $matchobj )
-	{
-	    if ( !empty($matchobj[7]) )
-	    {
+	/**
+	 * This is necessary to keep quote string formatted properly
+	 *
+	 * @param   $matchobj The function that called this one
+	 *
+	 * @return  A formatted string
+	 */
+	function _quote_wrapper( $matchobj ) {
+	    if ( !empty($matchobj[7]) ) {
 	        $classname = "dquo";
 	        $quote = $matchobj[7];
 	    }
-	    else
-	    {
+	    else {
 	        $classname = "quo";
 	        $quote = $matchobj[8];
 	    }
 	    return sprintf('%s<span class="%s">%s</span>', $matchobj[1], $classname, $quote);
 	}
 	
-	//SmartyPants fuctions
+	//SmartyPants fuctions follow
 
-	function SmartyPants($text, $attr = NULL, $ctx = NULL) {
+	/**
+	 * The main SmartyPants function. Calls the other formatters
+	 *
+	 * @param   $text The text to format
+	 * @param   $attr (Optional) Overridden attribute setting, for applying different formatting
+	 *
+	 * @return  The formatted text, looking pretty
+	 */
+	function smartyPants($text, $attr = NULL) {
 		# Paramaters:
 		$text;   # text to be parsed
 		$attr;   # value of the smart_quotes="" attribute
-		$ctx;    # MT context object (unused)
+		
 		if ($attr == NULL) $attr = $this->smartypants_attr;
 
 		# Options to specify which transformations to make:
@@ -325,7 +347,8 @@ class TypogrifyHelper extends AppHelper {
 				if (preg_match("@$this->sp_tags_to_skip@", $cur_token[1], $matches)) {
 					$in_pre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
 				}
-			} else {
+			}
+			else {
 				$t = $cur_token[1];
 				$last_char = substr($t, -1); # Remember last char of this token before processing.
 				if (! $in_pre) {
@@ -345,7 +368,7 @@ class TypogrifyHelper extends AppHelper {
 
 					# Note: backticks need to be processed before quotes.
 					if ($do_backticks) {
-						$t = $this->EducateBackticks($t);
+						$t = $this->educateBackticks($t);
 						if ($do_backticks == 2) $t = $this->EducateSingleBackticks($t);
 					}
 
@@ -370,7 +393,7 @@ class TypogrifyHelper extends AppHelper {
 						}
 						else {
 							# Normal case:
-							$t = $this->EducateQuotes($t);
+							$t = $this->educateQuotes($t);
 						}
 					}
 
@@ -384,12 +407,18 @@ class TypogrifyHelper extends AppHelper {
 		return $result;
 	}
 
-
-	function SmartQuotes($text, $attr = NULL, $ctx = NULL) {
+	/**
+	 * SmartQuotes function. Unused?
+	 *
+	 * @param   $text Text to parse
+	 * @param   $attr Attribute processing flag
+	 * 
+	 * @return  Processed text
+	 */
+	function smartQuotes($text, $attr = NULL) {
 		# Paramaters:
 		$text;   # text to be parsed
 		$attr;   # value of the smart_quotes="" attribute
-		$ctx;    # MT context object (unused)
 		if ($attr == NULL) $attr = $this->smartypants_attr;
 
 		$do_backticks;   # should we educate ``backticks'' -style quotes?
@@ -433,13 +462,14 @@ class TypogrifyHelper extends AppHelper {
 				if (preg_match("@$this->sp_tags_to_skip@", $cur_token[1], $matches)) {
 					$in_pre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
 				}
-			} else {
+			}
+			else {
 				$t = $cur_token[1];
 				$last_char = substr($t, -1); # Remember last char of this token before processing.
 				if (! $in_pre) {
 					$t = $this->ProcessEscapes($t);
 					if ($do_backticks) {
-						$t = $this->EducateBackticks($t);
+						$t = $this->educateBackticks($t);
 					}
 
 					if ($t == "'") {
@@ -462,7 +492,7 @@ class TypogrifyHelper extends AppHelper {
 					}
 					else {
 						# Normal case:
-						$t = $this->EducateQuotes($t);
+						$t = $this->educateQuotes($t);
 					}
 
 				}
@@ -477,13 +507,19 @@ class TypogrifyHelper extends AppHelper {
 		return $result;
 	}
 
-
-	function SmartDashes($text, $attr = NULL, $ctx = NULL) {
+	/**
+	 * Replaces dashes with proper em and en dashes. Unused?
+	 * 
+	 * @param   $text The text to parse
+	 * @param   $attr The flag to what kind of processing we're doing.
+	 *
+	 * @return  The processed text
+	 */
+	function smartDashes($text, $attr = NULL) {
 
 		# Paramaters:
 		$text;   # text to be parsed
 		$attr;   # value of the smart_dashes="" attribute
-		$ctx;    # MT context object (unused)
 		if ($attr == NULL) $attr = $this->smartypants_attr;
 
 		# reference to the subroutine to use for dash education, default to EducateDashes:
@@ -526,12 +562,18 @@ class TypogrifyHelper extends AppHelper {
 		return $result;
 	}
 
-
-	function SmartEllipses($text, $attr = NULL, $ctx = NULL) {
+	/**
+	 * Replaces ... or . . . with proper &hellip; Unused?
+	 * 
+	 * @param   $text The text to parse
+	 * @param   $attr The flag to what kind of processing we're doing.
+	 *
+	 * @return  The processed text
+	 */
+	function smartEllipses($text, $attr = NULL) {
 		# Paramaters:
 		$text;   # text to be parsed
 		$attr;   # value of the smart_ellipses="" attribute
-		$ctx;    # MT context object (unused)
 		if ($attr == NULL) $attr = $this->smartypants_attr;
 
 		if ($attr == 0) {
@@ -563,16 +605,18 @@ class TypogrifyHelper extends AppHelper {
 		return $result;
 	}
 
+	/**
+	 * Process quotes into HTML entities
+	 *
+	 * Example input:  "Isn't this fun?"
+	 * Example output: &#8220;Isn&#8217;t this fun?&#8221;	
+	 *
+	 * @param   $_ String to process
+	 *
+	 * @return  The string, with "educated" curly quote HTML entities.
+	 */
+	function educateQuotes($_) {
 
-	function EducateQuotes($_) {
-	#
-	#   Parameter:  String.
-	#
-	#   Returns:    The string, with "educated" curly quote HTML entities.
-	#
-	#   Example input:  "Isn't this fun?"
-	#   Example output: &#8220;Isn&#8217;t this fun?&#8221;
-	#
 		# Make our own "punctuation" character class, because the POSIX-style
 		# [:PUNCT:] is only available in Perl 5.6 or later:
 		$punct_class = "[!\"#\\$\\%'()*+,-.\\/:;<=>?\\@\\[\\\\\]\\^_`{|}~]";
@@ -652,149 +696,154 @@ class TypogrifyHelper extends AppHelper {
 		return $_;
 	}
 
-
-	function EducateBackticks($_) {
-	#
-	#   Parameter:  String.
-	#   Returns:    The string, with ``backticks'' -style double quotes
-	#               translated into HTML curly quote entities.
-	#
-	#   Example input:  ``Isn't this fun?''
-	#   Example output: &#8220;Isn't this fun?&#8221;
-	#
+	/**
+	 * Process backticks-style doublequotes translated into proper HTML entities
+	 *   Example input:  ``Isn't this fun?''
+	 *   Example output: &#8220;Isn't this fun?&#8221;
+	 *
+	 * @param $_ The string to convert backticks in
+	 *
+	 * @return The processed string
+	 */
+	function educateBackticks($_) {
 
 		$_ = str_replace(array("``",       "''",),
 						 array('&#8220;', '&#8221;'), $_);
 		return $_;
 	}
 
-
+	/**
+	 * Formats string with `backticks' -style single quotes
+	 * translated into HTML curly quote entities.
+	 * Example input:  `Isn't this fun?'
+	 * Example output: &#8216;Isn&#8217;t this fun?&#8217;
+	 * 	
+	 * @param $_ The string to process
+	 *	
+	 * @return The processed string
+	 */
 	function EducateSingleBackticks($_) {
-	#
-	#   Parameter:  String.
-	#   Returns:    The string, with `backticks' -style single quotes
-	#               translated into HTML curly quote entities.
-	#
-	#   Example input:  `Isn't this fun?'
-	#   Example output: &#8216;Isn&#8217;t this fun?&#8217;
-	#
-
 		$_ = str_replace(array("`",       "'",),
 						 array('&#8216;', '&#8217;'), $_);
 		return $_;
 	}
 
-
+	/**
+	 * Processes a string with each instance of "--" translated to
+	 * an em-dash HTML entity.
+	 * 
+	 * @param $_ The strong to process
+	 * 
+	 * @return The processed string
+	 *
+	 */
 	function EducateDashes($_) {
-	#
-	#   Parameter:  String.
-	#
-	#   Returns:    The string, with each instance of "--" translated to
-	#               an em-dash HTML entity.
-	#
-
 		$_ = str_replace('--', '&#8212;', $_);
 		return $_;
 	}
 
-
+	/**
+	 * Processes a string with each instance of "--" translated to
+	 * an en-dash HTML entity, and each "---" translated to
+	 * an em-dash HTML entity.
+	 *
+	 * @param $_ The string to process
+	 *
+	 * @return The processed string
+	 */
 	function EducateDashesOldSchool($_) {
-	#
-	#   Parameter:  String.
-	#
-	#   Returns:    The string, with each instance of "--" translated to
-	#               an en-dash HTML entity, and each "---" translated to
-	#               an em-dash HTML entity.
-	#
-
-		#                      em         en
+		//                     em         en
 		$_ = str_replace(array("---",     "--",),
 						 array('&#8212;', '&#8211;'), $_);
 		return $_;
 	}
 
-
+	/**
+	 * Processes a string, with each instance of "--" translated to
+	 * an em-dash HTML entity, and each "---" translated to
+	 * an en-dash HTML entity. Two reasons why: First, unlike the
+	 * en- and em-dash syntax supported by
+	 * EducateDashesOldSchool(), it's compatible with existing
+	 * entries written before SmartyPants 1.1, back when "--" was
+	 * only used for em-dashes.  Second, em-dashes are more
+	 * common than en-dashes, and so it sort of makes sense that
+	 * the shortcut should be shorter to type. (Thanks to Aaron
+	 * Swartz for the idea.)
+	 *
+	 * @param $_ The string to process
+	 *
+	 * @return The processed string
+	 */
 	function EducateDashesOldSchoolInverted($_) {
-	#
-	#   Parameter:  String.
-	#
-	#   Returns:    The string, with each instance of "--" translated to
-	#               an em-dash HTML entity, and each "---" translated to
-	#               an en-dash HTML entity. Two reasons why: First, unlike the
-	#               en- and em-dash syntax supported by
-	#               EducateDashesOldSchool(), it's compatible with existing
-	#               entries written before SmartyPants 1.1, back when "--" was
-	#               only used for em-dashes.  Second, em-dashes are more
-	#               common than en-dashes, and so it sort of makes sense that
-	#               the shortcut should be shorter to type. (Thanks to Aaron
-	#               Swartz for the idea.)
-	#
-
-		#                      en         em
+	    //                  	en         em
 		$_ = str_replace(array("---",     "--",),
 						 array('&#8211;', '&#8212;'), $_);
 		return $_;
 	}
 
-
+	/**
+	 * Processes a string with each instance of "..." translated to
+	 * an ellipsis HTML entity. Also converts the case where
+	 * there are spaces between the dots.
+	 *
+	 * Example input:  Huh...?
+	 * Example output: Huh&#8230;?
+	 * 
+	 * @param $_ The string to process
+	 *
+	 * @return The processed string
+	 */
 	function EducateEllipses($_) {
-	#
-	#   Parameter:  String.
-	#   Returns:    The string, with each instance of "..." translated to
-	#               an ellipsis HTML entity. Also converts the case where
-	#               there are spaces between the dots.
-	#
-	#   Example input:  Huh...?
-	#   Example output: Huh&#8230;?
-	#
-
 		$_ = str_replace(array("...",     ". . .",), '&#8230;', $_);
 		return $_;
 	}
 
-
+	/**
+	 * Processes a string, with each SmartyPants HTML entity translated to
+	 * its ASCII counterpart.
+	 *
+	 * Example input:  &#8220;Hello &#8212; world.&#8221;
+	 * Example output: "Hello -- world."
+	 *
+	 * @param $_ The string to process
+	 *
+	 * @return The processed string
+	 */
 	function StupefyEntities($_) {
-	#
-	#   Parameter:  String.
-	#   Returns:    The string, with each SmartyPants HTML entity translated to
-	#               its ASCII counterpart.
-	#
-	#   Example input:  &#8220;Hello &#8212; world.&#8221;
-	#   Example output: "Hello -- world."
-	#
-
-							#  en-dash    em-dash
+							//  en-dash    em-dash
 		$_ = str_replace(array('&#8211;', '&#8212;'),
 						 array('-',       '--'), $_);
 
-		# single quote         open       close
+		// single quote         open       close
 		$_ = str_replace(array('&#8216;', '&#8217;'), "'", $_);
 
-		# double quote         open       close
+		// double quote         open       close
 		$_ = str_replace(array('&#8220;', '&#8221;'), '"', $_);
 
-		$_ = str_replace('&#8230;', '...', $_); # ellipsis
+		$_ = str_replace('&#8230;', '...', $_); // ellipsis
 
 		return $_;
 	}
 
-
+	/**
+	 * Processes a string, with after processing the following backslash
+	 * escape sequences. This is useful if you want to force a "dumb"
+	 * quote or other character to appear.
+	 *
+	 * Escape  Value
+	 * ------  -----
+	 * \\      &#92;
+	 * \"      &#34;
+	 * \'      &#39;
+	 * \.      &#46;
+	 * \-      &#45;
+	 * \`      &#96;
+	 * 
+	 * @param $_ The string to process.
+	 *
+	 * @return The processed string
+	 */
 	function ProcessEscapes($_) {
-	#
-	#   Parameter:  String.
-	#   Returns:    The string, with after processing the following backslash
-	#               escape sequences. This is useful if you want to force a "dumb"
-	#               quote or other character to appear.
-	#
-	#               Escape  Value
-	#               ------  -----
-	#               \\      &#92;
-	#               \"      &#34;
-	#               \'      &#39;
-	#               \.      &#46;
-	#               \-      &#45;
-	#               \`      &#96;
-	#
 		$_ = str_replace(
 			array('\\\\',  '\"',    "\'",    '\.',    '\-',    '\`'),
 			array('&#92;', '&#34;', '&#39;', '&#46;', '&#45;', '&#96;'), $_);
@@ -802,22 +851,23 @@ class TypogrifyHelper extends AppHelper {
 		return $_;
 	}
 
-
+	/**
+	 * Processes a string, and transforms it into an array of the tokens comprising the input
+	 * string. Each token is either a tag (possibly with nested,
+	 * tags contained therein, such as <a href="<MTFoo>">, or a
+	 * run of text between tags. Each element of the array is a
+	 * two-element array; the first is either 'tag' or 'text';
+	 * the second is the actual value.
+	 *
+	 * Regular expression derived from the _tokenize() subroutine in 
+	 * Brad Choate's MTRegex plugin.
+	 * <http://www.bradchoate.com/past/mtregex.php>
+	 * 
+	 * @param $str String containing HTML markup.
+	 * 
+	 * @return The tokenized array
+	 */
 	function TokenizeHTML($str) {
-	#
-	#   Parameter:  String containing HTML markup.
-	#   Returns:    An array of the tokens comprising the input
-	#               string. Each token is either a tag (possibly with nested,
-	#               tags contained therein, such as <a href="<MTFoo>">, or a
-	#               run of text between tags. Each element of the array is a
-	#               two-element array; the first is either 'tag' or 'text';
-	#               the second is the actual value.
-	#
-	#
-	#   Regular expression derived from the _tokenize() subroutine in 
-	#   Brad Choate's MTRegex plugin.
-	#   <http://www.bradchoate.com/past/mtregex.php>
-	#
 		$index = 0;
 		$tokens = array();
 
@@ -837,6 +887,7 @@ class TypogrifyHelper extends AppHelper {
 		return $tokens;
 	}
 }
+
 /*
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
@@ -942,19 +993,6 @@ sequence into a decimal-encoded HTML entity:
 This is useful, for example, when you want to use straight quotes as
 foot and inch marks: 6'2" tall; a 17" iMac.
 
-
-Bugs
-----
-
-To file bug reports or feature requests (other than topics listed in the
-Caveats section above) please send email to:
-
-<michel.fortin@michelf.com>
-
-If the bug involves quotes being curled the wrong way, please send example
-text to illustrate.
-
-
 ### Algorithmic Shortcomings ###
 
 One situation in which quotes will get curled the wrong way is when
@@ -967,54 +1005,6 @@ single-quote, when in fact it should be a closing one. I don't think
 this problem can be solved in the general case -- every word processor
 I've tried gets this wrong as well. In such cases, it's best to use the
 proper HTML entity for closing single-quotes (`&#8217;`) by hand.
-
-
-Version History
----------------
-
-1.5.1e (9 Dec 2005)
-
-*	Corrected a bug that prevented special characters from being 
-    escaped.
-
-
-1.5.1d (25 May 2005)
-
-*	Corrected a small bug in `_TokenizeHTML` where a Doctype declaration
-	was not seen as HTML (smart quotes where applied inside).
-
-
-1.5.1c (13 Dec 2004)
-
-*	Changed a regular expression in `_TokenizeHTML` that could lead to
-	a segmentation fault with PHP 4.3.8 on Linux.
-
-
-1.5.1b (6 Sep 2004)
-
-*	Corrected a problem with quotes immediately following a dash
-	with no space between: `Text--"quoted text"--text.`
-
-*	PHP SmartyPants can now be used as a modifier by the Smarty 
-	template engine. Rename the file to "modifier.smartypants.php"
-	and put it in your smarty plugins folder.
-
-*	Replaced a lot of space characters by tabs, saving about 4 KB.
-
-
-1.5.1a (30 Jun 2004)
-
-*	PHP Markdown and PHP Smartypants now share the same `_TokenizeHTML` 
-	function when loaded simultanously.
-
-*	Changed the internals of `_TokenizeHTML` to lower the PHP version
-	requirement to PHP 4.0.5.
-
-
-1.5.1 (6 Jun 2004)
-
-*	Initial release of PHP SmartyPants, based on version 1.5.1 of the 
-	original SmartyPants written in Perl.
 
 
 Author
