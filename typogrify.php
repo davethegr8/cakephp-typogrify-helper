@@ -1,13 +1,11 @@
 <?php
 /*
-===============================================================
+======================================================================
 CakePHP TypogrifyHelper, based on php-typogrify and PHP SmartyPants
- ================================================================
+======================================================================
 Prettifies your web typography by preventing ugly quotes and 'widows' 
 and providing CSS hooks to style some special cases.
-
-License information follows at the end of this file.
-==============================================================
+======================================================================
 
 CakePHP TypogrifyHelper Copyright (c) 2009, Dave Poole <http://www.zastica.com>
 
@@ -20,14 +18,15 @@ SmartyPants Copyright (c) 2003-2004 John Gruber <http://daringfireball.net>
 PHP SmartyPants Copyright (c) 2004-2005 Michel Fortin <http://www.michelf.com/>
 
 All rights reserved.
+License information follows at the end of this file.
  */
 
 class TypogrifyHelper extends AppHelper {
 	
 	public $SmartyPantsPHPVersion;
 	public $SmartyPantsSyntaxVersion;
-	public $smartypants_attr;
-	public $sp_tags_to_skip;
+	public $smartypantsAttr;
+	public $spTagsToSkip;
 	
 	/**
 	 * Constructor - Initializes the object and sets up default values
@@ -38,14 +37,14 @@ class TypogrifyHelper extends AppHelper {
 		$this->SmartyPantsSyntaxVersion = '1.5.1';  # Fri 12 Mar 2004
 
 		// Tags to skip:
-		$this->sp_tags_to_skip = '<(/?)(?:pre|code|kbd|script|math)[\s>]';
+		$this->spTagsToSkip = '<(/?)(?:pre|code|kbd|script|math)[\s>]';
 
 		# Change this to configure.
 		#  1 =>  "--" for em-dashes; no en-dash support
 		#  2 =>  "---" for em-dashes; "--" for en-dashes
 		#  3 =>  "--" for em-dashes; "---" for en-dashes
 		#  See docs for more configuration options.
-		$this->smartypants_attr = "1";
+		$this->smartypantsAttr = "1";
 	}
 	
 	/**
@@ -80,9 +79,9 @@ class TypogrifyHelper extends AppHelper {
 	 *
 	 * @return  The string with ampersands replaced
 	 */
-	function amp( $text ) {
-	    $amp_finder = "/(\s|&nbsp;)(&|&amp;|&\#38;|&#038;)(\s|&nbsp;)/";
-	    return preg_replace($amp_finder, '\\1<span class="amp">&amp;</span>\\3', $text);
+	function amp ($text) {
+	    $ampFinder = "/(\s|&nbsp;)(&|&amp;|&\#38;|&#038;)(\s|&nbsp;)/";
+	    return preg_replace($ampFinder, '\\1<span class="amp">&amp;</span>\\3', $text);
 	}
 	
 	/**
@@ -96,13 +95,13 @@ class TypogrifyHelper extends AppHelper {
 	 *
 	 * @return  The string with widows (hopefully) eliminated
 	 */
-	function widont( $text ) {
+	function widont ($text) {
 		$tags = "a|span|i|b|em|strong|acronym|caps|sub|sup|abbr|big|small|code|cite|tt";
 		
 	    // This regex is a beast, tread lightly
-	    $widont_finder = "/([^\s])\s+(((<($tags)[^>]*>)*\s*[^\s<>]+)(<\/($tags)>)*[^\s<>]*\s*(<\/(p|h[1-6]|li)>|$))/i";
+	    $widontFinder = "/([^\s])\s+(((<($tags)[^>]*>)*\s*[^\s<>]+)(<\/($tags)>)*[^\s<>]*\s*(<\/(p|h[1-6]|li)>|$))/i";
 
-	    return preg_replace($widont_finder, '$1&nbsp;$2', $text);
+	    return preg_replace($widontFinder, '$1&nbsp;$2', $text);
 	}
 	
 	/**
@@ -113,9 +112,9 @@ class TypogrifyHelper extends AppHelper {
 	 *
 	 * @return  The string with dashes padded with &thinsp;
 	 */
-	function dash( $text ) {
-	    $dash_finder = "/(\s|&nbsp;|&thinsp;)*(&mdash;|&ndash;|&#x2013;|&#8211;|&#x2014;|&#8212;)(\s|&nbsp;|&thinsp;)*/";
-	    return preg_replace($dash_finder, '&thinsp;\\2&thinsp;', $text);
+	function dash ($text) {
+	    $dashFinder = "/(\s|&nbsp;|&thinsp;)*(&mdash;|&ndash;|&#x2013;|&#8211;|&#x2014;|&#8212;)(\s|&nbsp;|&thinsp;)*/";
+	    return preg_replace($dashFinder, '&thinsp;\\2&thinsp;', $text);
 	}
 	
 	
@@ -129,12 +128,12 @@ class TypogrifyHelper extends AppHelper {
 	 *
 	 * @return  The string with caps wrapped
 	 */
-	function caps( $text ) {
+	function caps ($text) {
 	    $tokens = $this->TokenizeHTML($text);    
 	    $result = array();
-	    $in_skipped_tag = false;
+	    $inSkippedTag = false;
 
-	    $cap_finder = "/(
+	    $capFinder = "/(
 	            (\b[A-Z\d]*        # Group 2: Any amount of caps and digits
 	            [A-Z]\d*[A-Z]      # A cap string much at least include two caps (but they can have digits between them)
 	            [A-Z\d]*\b)        # Any amount of caps and digits
@@ -142,53 +141,54 @@ class TypogrifyHelper extends AppHelper {
 	            (?:[A-Z]+\.\s?)+)  # Followed by the same thing at least once more
 	            (?:\s|\b|$))/x";
 
-	    $tags_to_skip_regex = "/<(\/)?(?:pre|code|kbd|script|math)[^>]*>/i";
+	    $tagsToSkipRegex = "/<(\/)?(?:pre|code|kbd|script|math)[^>]*>/i";
 
 	    foreach ($tokens as $token) {
 	        if ( $token[0] == "tag" ) {
 	            // Don't mess with tags.
 	            $result[] = $token[1];
-	            $close_match = preg_match($tags_to_skip_regex, $token[1]);            
+	            $closeMatch = preg_match($tagsToSkipRegex, $token[1]);            
 				
-	            if ( $close_match ) {
-	                $in_skipped_tag = true;
+	            if ($closeMatch) {
+	                $inSkippedTag = true;
 	            }
 	            else {
-	                $in_skipped_tag = false;
+	                $inSkippedTag = false;
 	            }
 	        }
 	        else {
-	            if ( $in_skipped_tag ) {
+	            if ($inSkippedTag) {
 	                $result[] = $token[1];
 	            }
 	            else {
-	                $result[] = preg_replace_callback($cap_finder, array('typogrifyhelper', '_cap_wrapper'), $token[1]);
+	                $result[] = preg_replace_callback($capFinder, array('typogrifyhelper', '__capWrapper'), $token[1]);
 	            }
 	        }
-	    }        
-	    return join("", $result);    
+	    }
+		
+	    return implode("", $result);    
 	}
 	
 	/**
 	 * This is necessary to keep dotted cap strings to pick up extra spaces
 	 * used in preg_replace_callback in caps()
 	 *
-	 * @param   $matchobj The function that called this one
+	 * @param   $matchObj The function that called this one
 	 *
 	 * @return  A formatted string
 	 */
-	function _cap_wrapper( $matchobj ) {
-	    if ( !empty($matchobj[2]) ) {
-	        return sprintf('<span class="caps">%s</span>', $matchobj[2]);
+	function __capWrapper ($matchObj) {
+	    if (!empty($matchObj[2])) {
+	        return sprintf('<span class="caps">%s</span>', $matchObj[2]);
 	    }
 	    else {
-	        $mthree = $matchobj[3];
-	        if ( ($mthree{strlen($mthree)-1}) == " " ) {
-	            $caps = substr($mthree, 0, -1);
+	        $mThree = $matchObj[3];
+	        if (($mThree{strlen($mThree)-1}) == " ") {
+	            $caps = substr($mThree, 0, -1);
 	            $tail = ' ';
 	        }
 	        else {
-	            $caps = $mthree;
+	            $caps = $mThree;
 	            $tail = '';
 	        }            
 	        return sprintf('<span class="caps">%s</span>%s', $caps, $tail);
@@ -208,46 +208,49 @@ class TypogrifyHelper extends AppHelper {
 	 *
 	 * @return  The text string with initial quotes wrapped with class="dquo" or class="quo"
 	 */
-	function initial_quotes( $text, $doGuillemets = false ) {
-	    $quote_finder = "/((<(p|h[1-6]|li)[^>]*>|^)                     # start with an opening p, h1-6, li or the start of the string
-	                    \s*                                             # optional white space! 
-	                    (<(a|em|span|strong|i|b)[^>]*>\s*)*)            # optional opening inline tags, with more optional white space for each.
-	                    ((\"|&ldquo;|&\#8220;)|('|&lsquo;|&\#8216;))    # Find me a quote! (only need to find the left quotes and the primes)
-	                                                                    # double quotes are in group 7, singles in group 8
-	                    /ix";
+	function initial_quotes ($text, $doGuillemets = false) {
+		/*
+		- start with an opening p, h1-6, li or the start of the string
+		- optional white space
+		- optional opening inline tags, with more optional white space for each.
+		- Find me a quote! (only need to find the left quotes and the primes)
+		- double quotes are in group 7, singles in group 8
+		*/
+		
+	    $quoteFinder = "/((<(p|h[1-6]|li)[^>]*>|^)\s*(<(a|em|span|strong|i|b)[^>]*>\s*)*)((\"|&ldquo;|&\#8220;)|('|&lsquo;|&\#8216;))/ix";
 
 	    if ($doGuillemets) {
-	    	$quote_finder = "/((<(p|h[1-6]|li)[^>]*>|^)                     					# start with an opening p, h1-6, li or the start of the string
-		                    \s*                                             					# optional white space! 
-		                    (<(a|em|span|strong|i|b)[^>]*>\s*)*)            					# optional opening inline tags, with more optional white space for each.
-		                    ((\"|&ldquo;|&\#8220;|\xAE|&\#171;|&laquo;)|('|&lsquo;|&\#8216;))    # Find me a quote! (only need to find the left quotes and the primes) - also look for guillemets (>> and << characters))
-		                                                                    					# double quotes are in group 7, singles in group 8
-		                    /ix";
+			/*
+			- start with an opening p, h1-6, li or the start of the string
+			- optional white space!
+			- optional opening inline tags, with more optional white space for each.
+			- Find me a quote! (only need to find the left quotes and the primes) - also look for guillemets (>> and << characters))
+			- double quotes are in group 7, singles in group 8
+			*/
+	    	$quoteFinder = "/((<(p|h[1-6]|li)[^>]*>|^)\s*(<(a|em|span|strong|i|b)[^>]*>\s*)*)((\"|&ldquo;|&\#8220;|\xAE|&\#171;|&laquo;)|('|&lsquo;|&\#8216;))/ix";
 	    }
 
-	    return preg_replace_callback($quote_finder, array('typogrifyhelper', '_quote_wrapper'), $text);
+	    return preg_replace_callback($quoteFinder, array('typogrifyhelper', '__quoteWrapper'), $text);
 	}
 	
 	/**
 	 * This is necessary to keep quote string formatted properly
 	 *
-	 * @param   $matchobj The function that called this one
+	 * @param   $matchObj The function that called this one
 	 *
 	 * @return  A formatted string
 	 */
-	function _quote_wrapper( $matchobj ) {
-	    if ( !empty($matchobj[7]) ) {
+	function __quoteWrapper ($matchObj) {
+	    if ( !empty($matchObj[7]) ) {
 	        $classname = "dquo";
-	        $quote = $matchobj[7];
+	        $quote = $matchObj[7];
 	    }
 	    else {
 	        $classname = "quo";
-	        $quote = $matchobj[8];
+	        $quote = $matchObj[8];
 	    }
-	    return sprintf('%s<span class="%s">%s</span>', $matchobj[1], $classname, $quote);
+	    return sprintf('%s<span class="%s">%s</span>', $matchObj[1], $classname, $quote);
 	}
-	
-	//SmartyPants fuctions follow
 
 	/**
 	 * The main SmartyPants function. Calls the other formatters
@@ -258,15 +261,13 @@ class TypogrifyHelper extends AppHelper {
 	 * @return  The formatted text, looking pretty
 	 */
 	function smartyPants($text, $attr = NULL) {
-		# Paramaters:
-		$text;   # text to be parsed
-		$attr;   # value of the smart_quotes="" attribute
-		
-		if ($attr == NULL) $attr = $this->smartypants_attr;
+		if ($attr == NULL) {
+			$attr = $this->smartypantsAttr;
+		}
 
-		# Options to specify which transformations to make:
-		$do_stupefy = FALSE;
-		$convert_quot = 0;  # should we translate &quot; entities into normal quotes?
+		// Options to specify which transformations to make:
+		$doStupefy = FALSE;
+		$convertQuot = 0;  # should we translate &quot; entities into normal quotes?
 
 		# Parse attributes:
 		# 0 : do nothing
@@ -289,40 +290,56 @@ class TypogrifyHelper extends AppHelper {
 		}
 		else if ($attr == "1") {
 			# Do everything, turn all options on.
-			$do_quotes    = 1;
-			$do_backticks = 1;
-			$do_dashes    = 1;
-			$do_ellipses  = 1;
+			$doQuotes    = 1;
+			$doBackticks = 1;
+			$doDashes    = 1;
+			$doEllipses  = 1;
 		}
 		else if ($attr == "2") {
 			# Do everything, turn all options on, use old school dash shorthand.
-			$do_quotes    = 1;
-			$do_backticks = 1;
-			$do_dashes    = 2;
-			$do_ellipses  = 1;
+			$doQuotes    = 1;
+			$doBackticks = 1;
+			$doDashes    = 2;
+			$doEllipses  = 1;
 		}
 		else if ($attr == "3") {
 			# Do everything, turn all options on, use inverted old school dash shorthand.
-			$do_quotes    = 1;
-			$do_backticks = 1;
-			$do_dashes    = 3;
-			$do_ellipses  = 1;
+			$doQuotes    = 1;
+			$doBackticks = 1;
+			$doDashes    = 3;
+			$doEllipses  = 1;
 		}
 		else if ($attr == "-1") {
 			# Special "stupefy" mode.
-			$do_stupefy   = 1;
+			$doStupefy   = 1;
 		}
 		else {
 			$chars = preg_split('//', $attr);
 			foreach ($chars as $c){
-				if      ($c == "q") { $do_quotes    = 1; }
-				else if ($c == "b") { $do_backticks = 1; }
-				else if ($c == "B") { $do_backticks = 2; }
-				else if ($c == "d") { $do_dashes    = 1; }
-				else if ($c == "D") { $do_dashes    = 2; }
-				else if ($c == "i") { $do_dashes    = 3; }
-				else if ($c == "e") { $do_ellipses  = 1; }
-				else if ($c == "w") { $convert_quot = 1; }
+				if ($c == "q") {
+					$doQuotes = 1;
+				}
+				elseif ($c == "b") {
+					$doBackticks = 1;
+				}
+				elseif ($c == "B") {
+					$doBackticks = 2;
+				}
+				elseif ($c == "d") {
+					$doDashes = 1;
+				}
+				elseif ($c == "D") {
+					$doDashes = 2;
+				}
+				elseif ($c == "i") {
+					$doDashes= 3;
+				}
+				elseif ($c == "e") {
+					$doEllipses = 1;
+				}
+				elseif ($c == "w") {
+					$convertQuot = 1;
+				}
 				else {
 					# Unknown attribute option, ignore.
 				}
@@ -331,60 +348,67 @@ class TypogrifyHelper extends AppHelper {
 
 		$tokens = $this->TokenizeHTML($text);
 		$result = '';
-		$in_pre = 0;  # Keep track of when we're inside <pre> or <code> tags.
+		$inPre = 0;  // Keep track of when we're inside <pre> or <code> tags.
 
-		$prev_token_last_char = "";     # This is a cheat, used to get some context
-										# for one-character tokens that consist of 
-										# just a quote char. What we do is remember
-										# the last character of the previous text
-										# token, to use as context to curl single-
-										# character quote tokens correctly.
+		/* $prevTokenLastChar is a cheat, used to get some context
+		   for one-character tokens that consist of 
+		   just a quote char. What we do is remember
+		   the last character of the previous text
+		   token, to use as context to curl single-
+		   character quote tokens correctly. */
+		$prevTokenLastChar = "";
 
-		foreach ($tokens as $cur_token) {
-			if ($cur_token[0] == "tag") {
-				# Don't mess with quotes inside tags.
-				$result .= $cur_token[1];
-				if (preg_match("@$this->sp_tags_to_skip@", $cur_token[1], $matches)) {
-					$in_pre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
+		foreach ($tokens as $currentToken) {
+			if ($currentToken[0] == "tag") {
+				// Don't mess with quotes inside tags.
+				$result .= $currentToken[1];
+				if (preg_match("@$this->spTagsToSkip@", $currentToken[1], $matches)) {
+					$inPre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
 				}
 			}
 			else {
-				$t = $cur_token[1];
-				$last_char = substr($t, -1); # Remember last char of this token before processing.
-				if (! $in_pre) {
-					$t = $this->ProcessEscapes($t);
+				$t = $currentToken[1];
+				$lastChar = substr($t, -1); // Remember last char of this token before processing.
+				if (! $inPre) {
+					$t = $this->processEscapes($t);
 
-					if ($convert_quot) {
+					if ($convertQuot) {
 						$t = preg_replace('/&quot;/', '"', $t);
 					}
 
-					if ($do_dashes) {
-						if ($do_dashes == 1) $t = $this->EducateDashes($t);
-						if ($do_dashes == 2) $t = $this->EducateDashesOldSchool($t);
-						if ($do_dashes == 3) $t = $this->EducateDashesOldSchoolInverted($t);
+					if ($doDashes) {
+						if ($doDashes == 1) {
+							$t = $this->educateDashes($t);
+						}
+						if ($doDashes == 2) {
+							$t = $this->educateDashesOldSchool($t);
+						}
+						if ($doDashes == 3) {
+							$t = $this->educateDashesOldSchoolInverted($t);
+						}
 					}
 
-					if ($do_ellipses) $t = $this->EducateEllipses($t);
+					if ($doEllipses) $t = $this->educateEllipses($t);
 
-					# Note: backticks need to be processed before quotes.
-					if ($do_backticks) {
+					// Note: backticks need to be processed before quotes.
+					if ($doBackticks) {
 						$t = $this->educateBackticks($t);
-						if ($do_backticks == 2) $t = $this->EducateSingleBackticks($t);
+						if ($doBackticks == 2) $t = $this->educateSingleBackticks($t);
 					}
 
-					if ($do_quotes) {
+					if ($doQuotes) {
 						if ($t == "'") {
 							# Special case: single-character ' token
-							if (preg_match('/\S/', $prev_token_last_char)) {
+							if (preg_match('/\S/', $prevTokenLastChar)) {
 								$t = "&#8217;";
 							}
 							else {
 								$t = "&#8216;";
 							}
 						}
-						else if ($t == '"') {
+						elseif ($t == '"') {
 							# Special case: single-character " token
-							if (preg_match('/\S/', $prev_token_last_char)) {
+							if (preg_match('/\S/', $prevTokenLastChar)) {
 								$t = "&#8221;";
 							}
 							else {
@@ -397,9 +421,11 @@ class TypogrifyHelper extends AppHelper {
 						}
 					}
 
-					if ($do_stupefy) $t = $this->StupefyEntities($t);
+					if ($doStupefy) {
+						$t = $this->stupefyEntities($t);
+					}
 				}
-				$prev_token_last_char = $last_char;
+				$prevTokenLastChar = $lastChar;
 				$result .= $t;
 			}
 		}
@@ -416,74 +442,74 @@ class TypogrifyHelper extends AppHelper {
 	 * @return  Processed text
 	 */
 	function smartQuotes($text, $attr = NULL) {
-		# Paramaters:
-		$text;   # text to be parsed
-		$attr;   # value of the smart_quotes="" attribute
-		if ($attr == NULL) $attr = $this->smartypants_attr;
+		if ($attr == NULL) {
+			$attr = $this->smartypantsAttr;
+		}
 
-		$do_backticks;   # should we educate ``backticks'' -style quotes?
+		$doBackticks; // should we educate ``backticks'' -style quotes?
 
 		if ($attr == 0) {
-			# do nothing;
+			// do nothing;
 			return $text;
 		}
 		else if ($attr == 2) {
-			# smarten ``backticks'' -style quotes
-			$do_backticks = 1;
+			// smarten ``backticks'' -style quotes
+			$doBackticks = 1;
 		}
 		else {
-			$do_backticks = 0;
+			$doBackticks = 0;
 		}
 
-		# Special case to handle quotes at the very end of $text when preceded by
-		# an HTML tag. Add a space to give the quote education algorithm a bit of
-		# context, so that it can guess correctly that it's a closing quote:
-		$add_extra_space = 0;
+		/* Special case to handle quotes at the very end of $text when preceded by
+		   an HTML tag. Add a space to give the quote education algorithm a bit of
+		   context, so that it can guess correctly that it's a closing quote: */
+		$addExtraSpace = 0;
 		if (preg_match("/>['\"]\\z/", $text)) {
-			$add_extra_space = 1; # Remember, so we can trim the extra space later.
+			$addExtraSpace = 1; # Remember, so we can trim the extra space later.
 			$text .= " ";
 		}
 
 		$tokens = $this->TokenizeHTML($text);
 		$result = '';
-		$in_pre = 0;  # Keep track of when we're inside <pre> or <code> tags
+		$inPre = 0;  # Keep track of when we're inside <pre> or <code> tags
 
-		$prev_token_last_char = "";     # This is a cheat, used to get some context
-										# for one-character tokens that consist of 
-										# just a quote char. What we do is remember
-										# the last character of the previous text
-										# token, to use as context to curl single-
-										# character quote tokens correctly.
+		/* $prevTokenLastChar is a cheat, used to get some context
+		   for one-character tokens that consist of 
+		   just a quote char. What we do is remember
+		   the last character of the previous text
+		   token, to use as context to curl single-
+		   character quote tokens correctly. */
+		$prevTokenLastChar = "";
 
-		foreach ($tokens as $cur_token) {
-			if ($cur_token[0] == "tag") {
+		foreach ($tokens as $currentToken) {
+			if ($currentToken[0] == "tag") {
 				# Don't mess with quotes inside tags
-				$result .= $cur_token[1];
-				if (preg_match("@$this->sp_tags_to_skip@", $cur_token[1], $matches)) {
-					$in_pre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
+				$result .= $currentToken[1];
+				if (preg_match("@$this->spTagsToSkip@", $currentToken[1], $matches)) {
+					$inPre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
 				}
 			}
 			else {
-				$t = $cur_token[1];
-				$last_char = substr($t, -1); # Remember last char of this token before processing.
-				if (! $in_pre) {
-					$t = $this->ProcessEscapes($t);
-					if ($do_backticks) {
+				$t = $currentToken[1];
+				$lastChar = substr($t, -1); // Remember last char of this token before processing.
+				if (! $inPre) {
+					$t = $this->processEscapes($t);
+					if ($doBackticks) {
 						$t = $this->educateBackticks($t);
 					}
 
 					if ($t == "'") {
-						# Special case: single-character ' token
-						if (preg_match('/\S/', $prev_token_last_char)) {
+						// Special case: single-character ' token
+						if (preg_match('/\S/', $prevTokenLastChar)) {
 							$t = "&#8217;";
 						}
 						else {
 							$t = "&#8216;";
 						}
 					}
-					else if ($t == '"') {
-						# Special case: single-character " token
-						if (preg_match('/\S/', $prev_token_last_char)) {
+					elseif ($t == '"') {
+						// Special case: single-character " token
+						if (preg_match('/\S/', $prevTokenLastChar)) {
 							$t = "&#8221;";
 						}
 						else {
@@ -496,12 +522,12 @@ class TypogrifyHelper extends AppHelper {
 					}
 
 				}
-				$prev_token_last_char = $last_char;
+				$prevTokenLastChar = $lastChar;
 				$result .= $t;
 			}
 		}
 
-		if ($add_extra_space) {
+		if ($addExtraSpace) {
 			preg_replace('/ \z/', '', $result);  # Trim trailing space if we added one earlier.
 		}
 		return $result;
@@ -516,14 +542,12 @@ class TypogrifyHelper extends AppHelper {
 	 * @return  The processed text
 	 */
 	function smartDashes($text, $attr = NULL) {
+		if ($attr == NULL) {
+			$attr = $this->smartypantsAttr;
+		}
 
-		# Paramaters:
-		$text;   # text to be parsed
-		$attr;   # value of the smart_dashes="" attribute
-		if ($attr == NULL) $attr = $this->smartypants_attr;
-
-		# reference to the subroutine to use for dash education, default to EducateDashes:
-		$dash_sub_ref = 'EducateDashes';
+		# reference to the subroutine to use for dash education, default to educateDashes:
+		$dashSubRef = 'educateDashes';
 
 		if ($attr == 0) {
 			# do nothing;
@@ -531,30 +555,30 @@ class TypogrifyHelper extends AppHelper {
 		}
 		else if ($attr == 2) {
 			# use old smart dash shortcuts, "--" for en, "---" for em
-			$dash_sub_ref = 'EducateDashesOldSchool'; 
+			$dashSubRef = 'educateDashesOldSchool'; 
 		}
 		else if ($attr == 3) {
 			# inverse of 2, "--" for em, "---" for en
-			$dash_sub_ref = 'EducateDashesOldSchoolInverted'; 
+			$dashSubRef = 'educateDashesOldSchoolInverted'; 
 		}
 
 		$tokens;
 		$tokens = $this->TokenizeHTML($text);
 
 		$result = '';
-		$in_pre = 0;  # Keep track of when we're inside <pre> or <code> tags
-		foreach ($tokens as $cur_token) {
-			if ($cur_token[0] == "tag") {
+		$inPre = 0;  # Keep track of when we're inside <pre> or <code> tags
+		foreach ($tokens as $currentToken) {
+			if ($currentToken[0] == "tag") {
 				# Don't mess with quotes inside tags
-				$result .= $cur_token[1];
-				if (preg_match("@$this->sp_tags_to_skip@", $cur_token[1], $matches)) {
-					$in_pre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
+				$result .= $currentToken[1];
+				if (preg_match("@$this->spTagsToSkip@", $currentToken[1], $matches)) {
+					$inPre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
 				}
 			} else {
-				$t = $cur_token[1];
-				if (! $in_pre) {
-					$t = $this->ProcessEscapes($t);
-					$t = $dash_sub_ref($t);
+				$t = $currentToken[1];
+				if (! $inPre) {
+					$t = $this->processEscapes($t);
+					$t = $dashSubRef($t);
 				}
 				$result .= $t;
 			}
@@ -571,33 +595,31 @@ class TypogrifyHelper extends AppHelper {
 	 * @return  The processed text
 	 */
 	function smartEllipses($text, $attr = NULL) {
-		# Paramaters:
-		$text;   # text to be parsed
-		$attr;   # value of the smart_ellipses="" attribute
-		if ($attr == NULL) $attr = $this->smartypants_attr;
+		if ($attr == NULL) {
+			$attr = $this->smartypantsAttr;
+		}
 
 		if ($attr == 0) {
 			# do nothing;
 			return $text;
 		}
-
-		$tokens;
+		
 		$tokens = $this->TokenizeHTML($text);
 
 		$result = '';
-		$in_pre = 0;  # Keep track of when we're inside <pre> or <code> tags
-		foreach ($tokens as $cur_token) {
-			if ($cur_token[0] == "tag") {
+		$inPre = 0;  # Keep track of when we're inside <pre> or <code> tags
+		foreach ($tokens as $currentToken) {
+			if ($currentToken[0] == "tag") {
 				# Don't mess with quotes inside tags
-				$result .= $cur_token[1];
-				if (preg_match("@$this->sp_tags_to_skip@", $cur_token[1], $matches)) {
-					$in_pre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
+				$result .= $currentToken[1];
+				if (preg_match("@$this->spTagsToSkip@", $currentToken[1], $matches)) {
+					$inPre = isset($matches[1]) && $matches[1] == '/' ? 0 : 1;
 				}
 			} else {
-				$t = $cur_token[1];
-				if (! $in_pre) {
-					$t = $this->ProcessEscapes($t);
-					$t = $this->EducateEllipses($t);
+				$t = $currentToken[1];
+				if (! $inPre) {
+					$t = $this->processEscapes($t);
+					$t = $this->educateEllipses($t);
 				}
 				$result .= $t;
 			}
@@ -611,89 +633,87 @@ class TypogrifyHelper extends AppHelper {
 	 * Example input:  "Isn't this fun?"
 	 * Example output: &#8220;Isn&#8217;t this fun?&#8221;	
 	 *
-	 * @param   $_ String to process
+	 * @param   $str String to process
 	 *
 	 * @return  The string, with "educated" curly quote HTML entities.
 	 */
-	function educateQuotes($_) {
+	function educateQuotes($str) {
 
 		# Make our own "punctuation" character class, because the POSIX-style
 		# [:PUNCT:] is only available in Perl 5.6 or later:
-		$punct_class = "[!\"#\\$\\%'()*+,-.\\/:;<=>?\\@\\[\\\\\]\\^_`{|}~]";
+		$punctuationClass = "[!\"#\\$\\%'()*+,-.\\/:;<=>?\\@\\[\\\\\]\\^_`{|}~]";
 
 		# Special case if the very first character is a quote
 		# followed by punctuation at a non-word-break. Close the quotes by brute force:
-		$_ = preg_replace(
-			array("/^'(?=$punct_class\\B)/", "/^\"(?=$punct_class\\B)/"),
-			array('&#8217;',                 '&#8221;'), $_);
+		$str = preg_replace(
+			array("/^'(?=$punctuationClass\\B)/", "/^\"(?=$punctuationClass\\B)/"),
+			array('&#8217;',                 '&#8221;'), $str);
 
 
 		# Special case for double sets of quotes, e.g.:
 		#   <p>He said, "'Quoted' words in a larger quote."</p>
-		$_ = preg_replace(
+		$str = preg_replace(
 			array("/\"'(?=\w)/",    "/'\"(?=\w)/"),
-			array('&#8220;&#8216;', '&#8216;&#8220;'), $_);
+			array('&#8220;&#8216;', '&#8216;&#8220;'), $str);
 
 		# Special case for decade abbreviations (the '80s):
-		$_ = preg_replace("/'(?=\\d{2}s)/", '&#8217;', $_);
+		$str = preg_replace("/'(?=\\d{2}s)/", '&#8217;', $str);
 
-		$close_class = '[^\ \t\r\n\[\{\(\-]';
-		$dec_dashes = '&\#8211;|&\#8212;';
+		$closeClass = '[^\ \t\r\n\[\{\(\-]';
+		$decDashes = '&\#8211;|&\#8212;';
 
-		# Get most opening single quotes:
-		$_ = preg_replace("{
-			(
-				\\s          |   # a whitespace char, or
-				&nbsp;      |   # a non-breaking space entity, or
-				--          |   # dashes, or
-				&[mn]dash;  |   # named dash entities
-				$dec_dashes |   # or decimal entities
-				&\\#x201[34];    # or hex
-			)
-			'                   # the quote
-			(?=\\w)              # followed by a word character
-			}x", '\1&#8216;', $_);
-		# Single closing quotes:
-		$_ = preg_replace("{
-			($close_class)?
-			'
-			(?(1)|          # If $1 captured, then do nothing;
-			  (?=\\s | s\\b)  # otherwise, positive lookahead for a whitespace
-			)               # char or an 's' at a word ending position. This
-							# is a special case to handle something like:
-							# \"<i>Custer</i>'s Last Stand.\"
-			}xi", '\1&#8217;', $_);
+		// Get most opening single quotes:
+		/*
+		(
+			a whitespace char, or
+			anon-breaking space entity, or
+			dashes, or
+			named dash entities
+			or decimal entities
+			or hex
+		)
+		the quote
+		followed by a word character
+		*/
+		$str = preg_replace("{(\\s|&nbsp;|--|&[mn]dash;|$decDashes|&\\#x201[34];)'(?=\\w)}x", '\1&#8216;', $str);
+		
+		// Single closing quotes:
+		/*
+		If $1 captured, then do nothing;
+		otherwise, positive lookahead for a whitespace
+		char or an 's' at a word ending position. This
+		is a special case to handle something like:
+		\"<i>Custer</i>'s Last Stand.\"
+		*/
+		$str = preg_replace("{($closeClass)?'(?(1)|(?=\\s | s\\b))}xi", '\1&#8217;', $str);
 
-		# Any remaining single quotes should be opening ones:
-		$_ = str_replace("'", '&#8216;', $_);
+		// Any remaining single quotes should be opening ones:
+		$str = str_replace("'", '&#8216;', $str);
 
+		/* Get most opening double quotes:
+		a whitespace char, or
+		a non-breaking space entity, or
+		dashes, or
+		named dash entities
+		or decimal entities
+		or hex
+		
+		the quote
+		followed by a word character
+		*/
+		$str = preg_replace("{(\\s|&nbsp;|--|&[mn]dash;|$decDashes|&\\#x201[34];)\"(?=\\w)}x", '\1&#8220;', $str);
 
-		# Get most opening double quotes:
-		$_ = preg_replace("{
-			(
-				\\s          |   # a whitespace char, or
-				&nbsp;      |   # a non-breaking space entity, or
-				--          |   # dashes, or
-				&[mn]dash;  |   # named dash entities
-				$dec_dashes |   # or decimal entities
-				&\\#x201[34];    # or hex
-			)
-			\"                   # the quote
-			(?=\\w)              # followed by a word character
-			}x", '\1&#8220;', $_);
+		/* Double closing quotes:
+		
+		If $1 captured, then do nothing;
+		if not, then make sure the next char is whitespace.
+		*/
+		$str = preg_replace("{($closeClass)?\"(?(1)|(?=\\s))}x", '\1&#8221;', $str);
 
-		# Double closing quotes:
-		$_ = preg_replace("{
-			($close_class)?
-			\"
-			(?(1)|(?=\\s))   # If $1 captured, then do nothing;
-							   # if not, then make sure the next char is whitespace.
-			}x", '\1&#8221;', $_);
+		//Any remaining quotes should be opening ones.
+		$str = str_replace('"', '&#8220;', $str);
 
-		# Any remaining quotes should be opening ones.
-		$_ = str_replace('"', '&#8220;', $_);
-
-		return $_;
+		return $str;
 	}
 
 	/**
@@ -701,15 +721,15 @@ class TypogrifyHelper extends AppHelper {
 	 *   Example input:  ``Isn't this fun?''
 	 *   Example output: &#8220;Isn't this fun?&#8221;
 	 *
-	 * @param $_ The string to convert backticks in
+	 * @param $str The string to convert backticks in
 	 *
 	 * @return The processed string
 	 */
-	function educateBackticks($_) {
+	function educateBackticks($str) {
 
-		$_ = str_replace(array("``",       "''",),
-						 array('&#8220;', '&#8221;'), $_);
-		return $_;
+		$str = str_replace(array("``",       "''",),
+						 array('&#8220;', '&#8221;'), $str);
+		return $str;
 	}
 
 	/**
@@ -718,28 +738,28 @@ class TypogrifyHelper extends AppHelper {
 	 * Example input:  `Isn't this fun?'
 	 * Example output: &#8216;Isn&#8217;t this fun?&#8217;
 	 * 	
-	 * @param $_ The string to process
+	 * @param $str The string to process
 	 *	
 	 * @return The processed string
 	 */
-	function EducateSingleBackticks($_) {
-		$_ = str_replace(array("`",       "'",),
-						 array('&#8216;', '&#8217;'), $_);
-		return $_;
+	function educateSingleBackticks($str) {
+		$str = str_replace(array("`",       "'",),
+						 array('&#8216;', '&#8217;'), $str);
+		return $str;
 	}
 
 	/**
 	 * Processes a string with each instance of "--" translated to
 	 * an em-dash HTML entity.
 	 * 
-	 * @param $_ The strong to process
+	 * @param $str The strong to process
 	 * 
 	 * @return The processed string
 	 *
 	 */
-	function EducateDashes($_) {
-		$_ = str_replace('--', '&#8212;', $_);
-		return $_;
+	function educateDashes($str) {
+		$str = str_replace('--', '&#8212;', $str);
+		return $str;
 	}
 
 	/**
@@ -747,15 +767,15 @@ class TypogrifyHelper extends AppHelper {
 	 * an en-dash HTML entity, and each "---" translated to
 	 * an em-dash HTML entity.
 	 *
-	 * @param $_ The string to process
+	 * @param $str The string to process
 	 *
 	 * @return The processed string
 	 */
-	function EducateDashesOldSchool($_) {
+	function educateDashesOldSchool($str) {
 		//                     em         en
-		$_ = str_replace(array("---",     "--",),
-						 array('&#8212;', '&#8211;'), $_);
-		return $_;
+		$str = str_replace(array("---",     "--",),
+						 array('&#8212;', '&#8211;'), $str);
+		return $str;
 	}
 
 	/**
@@ -763,22 +783,22 @@ class TypogrifyHelper extends AppHelper {
 	 * an em-dash HTML entity, and each "---" translated to
 	 * an en-dash HTML entity. Two reasons why: First, unlike the
 	 * en- and em-dash syntax supported by
-	 * EducateDashesOldSchool(), it's compatible with existing
+	 * educateDashesOldSchool(), it's compatible with existing
 	 * entries written before SmartyPants 1.1, back when "--" was
 	 * only used for em-dashes.  Second, em-dashes are more
 	 * common than en-dashes, and so it sort of makes sense that
 	 * the shortcut should be shorter to type. (Thanks to Aaron
 	 * Swartz for the idea.)
 	 *
-	 * @param $_ The string to process
+	 * @param $str The string to process
 	 *
 	 * @return The processed string
 	 */
-	function EducateDashesOldSchoolInverted($_) {
+	function educateDashesOldSchoolInverted($str) {
 	    //                  	en         em
-		$_ = str_replace(array("---",     "--",),
-						 array('&#8211;', '&#8212;'), $_);
-		return $_;
+		$str = str_replace(array("---",     "--",),
+						 array('&#8211;', '&#8212;'), $str);
+		return $str;
 	}
 
 	/**
@@ -789,13 +809,13 @@ class TypogrifyHelper extends AppHelper {
 	 * Example input:  Huh...?
 	 * Example output: Huh&#8230;?
 	 * 
-	 * @param $_ The string to process
+	 * @param $str The string to process
 	 *
 	 * @return The processed string
 	 */
-	function EducateEllipses($_) {
-		$_ = str_replace(array("...",     ". . .",), '&#8230;', $_);
-		return $_;
+	function educateEllipses($str) {
+		$str = str_replace(array("...",     ". . .",), '&#8230;', $str);
+		return $str;
 	}
 
 	/**
@@ -805,24 +825,24 @@ class TypogrifyHelper extends AppHelper {
 	 * Example input:  &#8220;Hello &#8212; world.&#8221;
 	 * Example output: "Hello -- world."
 	 *
-	 * @param $_ The string to process
+	 * @param $str The string to process
 	 *
 	 * @return The processed string
 	 */
-	function StupefyEntities($_) {
+	function stupefyEntities($str) {
 							//  en-dash    em-dash
-		$_ = str_replace(array('&#8211;', '&#8212;'),
-						 array('-',       '--'), $_);
+		$str = str_replace(array('&#8211;', '&#8212;'),
+						 array('-',       '--'), $str);
 
 		// single quote         open       close
-		$_ = str_replace(array('&#8216;', '&#8217;'), "'", $_);
+		$str = str_replace(array('&#8216;', '&#8217;'), "'", $str);
 
 		// double quote         open       close
-		$_ = str_replace(array('&#8220;', '&#8221;'), '"', $_);
+		$str = str_replace(array('&#8220;', '&#8221;'), '"', $str);
 
-		$_ = str_replace('&#8230;', '...', $_); // ellipsis
+		$str = str_replace('&#8230;', '...', $str); // ellipsis
 
-		return $_;
+		return $str;
 	}
 
 	/**
@@ -839,16 +859,16 @@ class TypogrifyHelper extends AppHelper {
 	 * \-      &#45;
 	 * \`      &#96;
 	 * 
-	 * @param $_ The string to process.
+	 * @param $str The string to process.
 	 *
 	 * @return The processed string
 	 */
-	function ProcessEscapes($_) {
-		$_ = str_replace(
+	function processEscapes($str) {
+		$str = str_replace(
 			array('\\\\',  '\"',    "\'",    '\.',    '\-',    '\`'),
-			array('&#92;', '&#34;', '&#39;', '&#46;', '&#45;', '&#96;'), $_);
+			array('&#92;', '&#34;', '&#39;', '&#46;', '&#45;', '&#96;'), $str);
 
-		return $_;
+		return $str;
 	}
 
 	/**
@@ -871,18 +891,24 @@ class TypogrifyHelper extends AppHelper {
 		$index = 0;
 		$tokens = array();
 
-		$match = '(?s:<!(?:--.*?--\s*)+>)|'.	# comment
-				 '(?s:<\?.*?\?>)|'.				# processing instruction
-				 								# regular tags
+		/*
+		comment
+		processing instruction
+		regular tags
+		*/
+		$match = '(?s:<!(?:--.*?--\s*)+>)|'.	
+				 '(?s:<\?.*?\?>)|'.
 				 '(?:<[/!$]?[-a-zA-Z0-9:]+\b(?>[^"\'>]+|"[^"]*"|\'[^\']*\')*>)'; 
 
 		$parts = preg_split("{($match)}", $str, -1, PREG_SPLIT_DELIM_CAPTURE);
 
 		foreach ($parts as $part) {
-			if (++$index % 2 && $part != '') 
+			if (++$index % 2 && $part != '') {
 				$tokens[] = array('text', $part);
-			else
+			}
+			else {
 				$tokens[] = array('tag', $part);
+			}
 		}
 		return $tokens;
 	}
