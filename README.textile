@@ -1,0 +1,42 @@
+h1. TypogrifyHelper for CakePHP
+
+h2. Description
+
+TypogrifyHelper for CakePHP is a conversion of the typogrify module
+for Drupal.  It is based off of php-typogrify and PHP SmartyPants.
+
+h2. Installation
+
+* Submodule:
+** @git submodule add git://github.com/davethegr8/cakephp-typogrify-helper.git path/to/app/plugins/typogrify@
+** @git submodule init@
+** @git submodule update@
+* Clone:
+** @git clone git://github.com/davethegr8/cakephp-typogrify-helper.git path/to/app/plugins/typogrify@
+* Download zip
+** Download @http://github.com/davethegr8/cakephp-typogrify-helper/zipball/master@
+** Extract to your @app/plugins@ folder
+** Rename the extracted folder to @typogrify@
+*** The resulting structure should be @app/plugins/typogrify/views/helpers/typogrify.php@
+
+h2. Usage
+
+* To use it in every action of a controller, add it to your helpers array:
+
+@var $helpers = array('Typogrify.Typogrify')@
+
+* To initialize the helper in whatever function you want it to be usable in
+
+<pre><code>
+function view($id = NULL) {
+	$this->helpers[] = 'Typogrify.Typogrify';
+
+	/*
+	 * Do some other data processing before passing control off to the view
+	 */
+}
+</code></pre>
+
+* To parse text and display the tyopgrified output:
+
+@<?php echo $typogrify->parse($text) ?>@
